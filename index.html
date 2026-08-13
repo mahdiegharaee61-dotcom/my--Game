@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سایبر ریاضی: رمزگشایی جبر هفتم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Vazir';
+            src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir.woff2') format('woff2');
+        }
+        body {
+            font-family: 'Vazir', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .cyber-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        .glow-text {
+            text-shadow: 0 0 10px #3b82f6;
+        }
+        .match-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .match-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5);
+        }
+        .selected {
+            background-color: #3b82f6 !important;
+            border-color: #60a5fa !important;
+            transform: scale(1.05);
+        }
+        .matched {
+            background-color: #10b981 !important;
+            border-color: #34d399 !important;
+            opacity: 0.6;
+            cursor: default;
+        }
+        .wrong {
+            background-color: #ef4444 !important;
+            border-color: #f87171 !important;
+            color: #ffffff !important;
+        }
+        .secret-cell {
+            border: 2px solid #a855f7 !important;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.6) inset;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <header class="w-full max-w-4xl flex justify-between items-center mb-8 p-4 cyber-card rounded-2xl">
+        <div>
+            <h1 class="text-2xl font-bold text-blue-400 glow-text">سایبر ریاضی: فصل ۳</h1>
+            <p class="text-sm text-slate-400">استاد جبر و معادله شو!</p>
+        </div>
+        <div class="text-right">
+            <div id="scoreDisplay" class="text-xl font-bold text-yellow-500">امتیاز: ۰</div>
+            <div id="levelTag" class="text-xs bg-blue-600 px-2 py-1 rounded-full mt-1 text-center">سطح: مقدماتی</div>
+        </div>
+    </header>
+
+    <main id="gameContainer" class="w-full max-w-4xl">
+        <!-- Main Menu -->
+        <div id="mainMenu" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div onclick="startMatching()" class="cyber-card p-8 rounded-3xl text-center cursor-pointer hover:border-yellow-400 transition-colors">
+                <div class="text-5xl mb-4">🧩</div>
+                <h2 class="text-xl font-bold mb-2">جورچین جبری</h2>
+                <p class="text-slate-400">عبارت‌های مساوی را به هم وصل کن.</p>
+            </div>
+            <div onclick="startCrossword()" class="cyber-card p-8 rounded-3xl text-center cursor-pointer hover:border-yellow-400 transition-colors">
+                <div class="text-5xl mb-4">📝</div>
+                <h2 class="text-xl font-bold mb-2">جدول کلمات متقاطع</h2>
+                <p class="text-slate-400">مفاهیم اصلی جبر را حدس بزن و رمز را کشف کن.</p>
+            </div>
+        </div>
+
+        <!-- Level 1-3: Matching Game -->
+        <div id="matchingGame" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="showMenu()" class="text-sm bg-slate-700 px-4 py-2 rounded-xl hover:bg-slate-600">برگشت به منو</button>
+                <span id="matchingTitle" class="text-blue-300 font-bold">جفت‌های مساوی را پیدا کن!</span>
+            </div>
+            <div id="matchGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <!-- Cards injected here -->
+            </div>
+        </div>
+
+        <!-- Crossword Game -->
+        <div id="crosswordGame" class="hidden cyber-card p-6 rounded-3xl">
+             <div class="flex justify-between items-center mb-6">
+                <button onclick="showMenu()" class="text-sm bg-slate-700 px-4 py-2 rounded-xl hover:bg-slate-600">برگشت به منو</button>
+                <h2 class="text-xl font-bold text-yellow-400">جدول مفاهیم جبر + رمزگشایی</h2>
+                <div id="timerDisplay" class="text-sm font-bold bg-slate-800 px-3 py-1 rounded-lg border border-blue-400">زمان: ۰ ثانیه</div>
+            </div>
+
+            <!-- Secret Banner -->
+            <div class="mb-4 p-3 bg-purple-900/40 border border-purple-500 rounded-xl text-center text-sm">
+                <span>🔑 خانه‌های با کادر <strong class="text-purple-300">بنفش</strong> حروف رمز جدول هستند!</span>
+                <div id="secretBox" class="mt-2 text-lg font-bold text-yellow-300 tracking-widest">رمز: _ _ _ _ _ _ _ _ _</div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-8">
+                <div id="crosswordGrid" class="grid grid-cols-7 gap-1 bg-slate-800 p-2 rounded-lg mx-auto md:mx-0">
+                    <!-- Grid cells injected here -->
+                </div>
+                <div class="flex-1 space-y-4">
+                    <h3 class="font-bold border-b border-slate-600 pb-2">راهنما:</h3>
+                    <div id="cluesList" class="text-sm space-y-2 max-h-96 overflow-y-auto">
+                        <!-- Clues injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let score = 0;
+        let selectedCards = [];
+        let currentMatchingLevel = 1;
+        
+        let crosswordTimer = null;
+        let crosswordTimeElapsed = 0;
+
+        const matchingLevelsData = {
+            1: [ // Easy
+                { id: 1, text: '2x + 3x', val: '5x' },
+                { id: 2, text: '3(x - 2)', val: '3x - 6' },
+                { id: 3, text: 'x + x + x', val: '3x' },
+                { id: 4, text: '2a - 5a', val: '-3a' },
+                { id: 5, text: '4x = 20', val: 'x = 5' },
+                { id: 6, text: 'مقدار 2x به ازای x=3', val: '6' }
+            ],
+            2: [ // Medium
+                { id: 1, text: '2x + 5 = 15', val: 'x = 5' },
+                { id: 2, text: '3(2x - 4)', val: '6x - 12' },
+                { id: 3, text: '-4a + 9a', val: '5a' },
+                { id: 4, text: 'مقدار x² - 1 به ازای x=3', val: '8' },
+                { id: 5, text: '5x - 2x + 4', val: '3x + 4' },
+                { id: 6, text: 'x / 3 = 4', val: 'x = 12' }
+            ],
+            3: [ // Hard
+                { id: 1, text: '2(3x - 1) - 4x', val: '2x - 2' },
+                { id: 2, text: '3x - 7 = 2x + 5', val: 'x = 12' },
+                { id: 3, text: 'مقدار 2x² - 3x به ازای x=-2', val: '14' },
+                { id: 4, text: '4(a - 2) - 2(a + 1)', val: '2a - 10' },
+                { id: 5, text: '(12x - 8) / 4', val: '3x - 2' },
+                { id: 6, text: '5 - 2(x - 3)', val: '11 - 2x' }
+            ]
+        };
+
+        // Complete 7x7 Crossword Data with clear starting points and Secret letters
+        // Secret Word: "معادله جبر" (9 letters)
+        const crosswordData = {
+            cells: [
+                // 1. "معادله" (Horiz, R1 C1..C6)
+                { r: 1, c: 1, l: 'م', num: '۱', secretIndex: 0 },
+                { r: 1, c: 2, l: 'ع', secretIndex: 1 },
+                { r: 1, c: 3, l: 'ا', secretIndex: 2 },
+                { r: 1, c: 4, l: 'د', secretIndex: 3 },
+                { r: 1, c: 5, l: 'ل', secretIndex: 4 },
+                { r: 1, c: 6, l: 'ه', secretIndex: 5 },
+
+                // 2. "متغیر" (Vert, R1 C1..R5 C1) - Intersects 'م' at (1,1)
+                { r: 2, c: 1, l: 'ت' },
+                { r: 3, c: 1, l: 'غ' },
+                { r: 4, c: 1, l: 'ی' },
+                { r: 5, c: 1, l: 'ر' },
+
+                // 3. "جبر" (Horiz, R3 C3..C5)
+                { r: 3, c: 3, l: 'ج', num: '۲', secretIndex: 6 },
+                { r: 3, c: 4, l: 'ب', secretIndex: 7 },
+                { r: 3, c: 5, l: 'ر', secretIndex: 8 },
+
+                // 4. "مجهول" (Vert, R3 C3..R7 C3) - Intersects 'ج' at (3,3)
+                { r: 4, c: 3, l: 'ه' },
+                { r: 5, c: 3, l: 'و' },
+                { r: 6, c: 3, l: 'ل' },
+
+                // 5. "ضریب" (Horiz, R5 C3..C6) - Intersects 'و' at (5,3)
+                { r: 5, c: 4, l: 'ض', num: '۳' },
+                { r: 5, c: 5, l: 'ر' },
+                { r: 5, c: 6, l: 'ی' },
+                { r: 5, c: 7, l: 'ب' }
+            ],
+            clues: [
+                { id: '۱', text: "۱. افقی (خانه ۱,۱): تساوی جبری که دارای مجهول است." },
+                { id: '۱-عمودی', text: "۱. عمودی (خانه ۱,۱): نمادی که به جای عدد می‌نشیند." },
+                { id: '۲', text: "۲. افقی (خانه ۳,۳): شاخه‌ای از ریاضیات که با نمادها و متغیرها کار می‌کند." },
+                { id: '۲-عمودی', text: "۲. عمودی (خانه ۳,۳): مقداری در معادله که ارزش آن را نمی‌دانیم." },
+                { id: '۳', text: "۳. افقی (خانه ۵,۴): عددی که در متغیر ضرب می‌شود." }
+            ]
+        };
+
+        let secretChars = Array(9).fill('_');
+
+        function showMenu() {
+            if (crosswordTimer) clearInterval(crosswordTimer);
+            document.getElementById('mainMenu').classList.remove('hidden');
+            document.getElementById('matchingGame').classList.add('hidden');
+            document.getElementById('crosswordGame').classList.add('hidden');
+        }
+
+        /* --- Matching Game Logic --- */
+
+        function startMatching() {
+            currentMatchingLevel = 1;
+            loadMatchingLevel(currentMatchingLevel);
+        }
+
+        function loadMatchingLevel(level) {
+            document.getElementById('mainMenu').classList.add('hidden');
+            const matchGameArea = document.getElementById('matchingGame');
+            matchGameArea.classList.remove('hidden');
+            
+            const levelNames = { 1: "مقدماتی", 2: "میانی", 3: "حرفه‌ای" };
+            document.getElementById('matchingTitle').innerText = `بازی جورچین - سطح: ${levelNames[level]}`;
+            document.getElementById('levelTag').innerText = `سطح: ${levelNames[level]}`;
+
+            const grid = document.getElementById('matchGrid');
+            grid.innerHTML = '';
+            
+            const pairs = matchingLevelsData[level];
+            const cards = [];
+            pairs.forEach(p => {
+                cards.push({ text: p.text, pairId: p.id });
+                cards.push({ text: p.val, pairId: p.id });
+            });
+            
+            cards.sort(() => Math.random() - 0.5);
+            
+            cards.forEach((card) => {
+                const div = document.createElement('div');
+                div.className = 'match-card cyber-card p-4 rounded-xl text-center text-sm md:text-base min-h-[80px] flex items-center justify-center font-bold border-slate-700 border-2 select-none';
+                div.innerText = card.text;
+                div.dataset.pairId = card.pairId;
+                div.onclick = () => handleCardClick(div);
+                grid.appendChild(div);
+            });
+        }
+
+        function handleCardClick(card) {
+            if (card.classList.contains('matched') || selectedCards.includes(card) || card.classList.contains('wrong')) return;
+            
+            card.classList.add('selected');
+            selectedCards.push(card);
+            
+            if (selectedCards.length === 2) {
+                const [c1, c2] = selectedCards;
+                if (c1.dataset.pairId === c2.dataset.pairId) {
+                    c1.classList.remove('selected');
+                    c2.classList.remove('selected');
+                    c1.classList.add('matched');
+                    c2.classList.add('matched');
+                    score += 15;
+                    updateScore();
+                    checkMatchingWin();
+                } else {
+                    c1.classList.remove('selected');
+                    c2.classList.remove('selected');
+                    c1.classList.add('wrong');
+                    c2.classList.add('wrong');
+                    
+                    score = Math.max(0, score - 5);
+                    updateScore();
+
+                    setTimeout(() => {
+                        c1.classList.remove('wrong');
+                        c2.classList.remove('wrong');
+                    }, 800);
+                }
+                selectedCards = [];
+            }
+        }
+
+        function checkMatchingWin() {
+            const unmatched = document.querySelectorAll('.match-card:not(.matched)');
+            if (unmatched.length === 0) {
+                if (currentMatchingLevel < 3) {
+                    showMessage(
+                        "آفرین! پاسخ درست بود!", 
+                        `سطح ${currentMatchingLevel} را با موفقیت گذراندید.\nامتیاز کل: ${score}`, 
+                        () => {
+                            currentMatchingLevel++;
+                            loadMatchingLevel(currentMatchingLevel);
+                        }
+                    );
+                } else {
+                    showMessage(
+                        "تبریک! شما استاد جبر شدید! 🏆", 
+                        `تمام ۳ سطح جورچین با موفقیت کامل شد.\nامتیاز نهایی: ${score}`, 
+                        () => showMenu()
+                    );
+                }
+            }
+        }
+
+        /* --- Crossword Game Logic --- */
+
+        function startCrossword() {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('crosswordGame').classList.remove('hidden');
+            
+            const gridEl = document.getElementById('crosswordGrid');
+            const cluesEl = document.getElementById('cluesList');
+            gridEl.innerHTML = '';
+            cluesEl.innerHTML = '';
+            secretChars = Array(9).fill('_');
+            updateSecretDisplay();
+
+            crosswordTimeElapsed = 0;
+            document.getElementById('timerDisplay').innerText = `زمان: ۰ ثانیه`;
+            if (crosswordTimer) clearInterval(crosswordTimer);
+            crosswordTimer = setInterval(() => {
+                crosswordTimeElapsed++;
+                document.getElementById('timerDisplay').innerText = `زمان: ${crosswordTimeElapsed} ثانیه`;
+            }, 1000);
+            
+            for (let r = 1; r <= 7; r++) {
+                for (let c = 1; c <= 7; c++) {
+                    const cellData = crosswordData.cells.find(cell => cell.r === r && cell.c === c);
+                    const cell = document.createElement('div');
+                    
+                    let baseClass = 'w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-sm text-lg font-bold relative transition-all ';
+                    if (cellData) {
+                        baseClass += 'bg-slate-700 text-transparent border border-blue-500/30 cursor-pointer hover:bg-slate-600 ';
+                        if (cellData.secretIndex !== undefined) {
+                            baseClass += 'secret-cell ';
+                        }
+                    } else {
+                        baseClass += 'bg-slate-900 ';
+                    }
+                    cell.className = baseClass;
+                    
+                    if (cellData) {
+                        if (cellData.num) {
+                            const numLabel = document.createElement('span');
+                            numLabel.className = 'absolute top-0 right-1 text-[9px] text-yellow-400 font-normal';
+                            numLabel.innerText = cellData.num;
+                            cell.appendChild(numLabel);
+                        }
+
+                        cell.onclick = () => {
+                            if (cell.classList.contains('revealed')) return;
+                            const input = prompt("چه حرفی در این خانه قرار می‌گیرد؟");
+                            if (input && input.trim() === cellData.l) {
+                                const textSpan = document.createElement('span');
+                                textSpan.innerText = input.trim();
+                                cell.appendChild(textSpan);
+
+                                cell.classList.remove('bg-slate-700', 'text-transparent');
+                                cell.classList.add('revealed', 'bg-green-600', 'text-white');
+                                score += 10;
+                                updateScore();
+
+                                if (cellData.secretIndex !== undefined) {
+                                    secretChars[cellData.secretIndex] = cellData.l;
+                                    updateSecretDisplay();
+                                }
+
+                                checkCrosswordWin();
+                            } else if (input !== null) {
+                                alert("❌ حرف اشتباه است!");
+                                score = Math.max(0, score - 2);
+                                updateScore();
+                            }
+                        };
+                    }
+                    gridEl.appendChild(cell);
+                }
+            }
+            
+            crosswordData.clues.forEach(clue => {
+                const li = document.createElement('div');
+                li.className = 'p-2 bg-slate-800 rounded-lg border-r-4 border-blue-500 text-slate-200';
+                li.innerText = clue.text;
+                cluesEl.appendChild(li);
+            });
+        }
+
+        function updateSecretDisplay() {
+            const formatted = secretChars.slice(0, 6).join(' ') + " - " + secretChars.slice(6).join(' ');
+            document.getElementById('secretBox').innerText = `رمز: ${formatted}`;
+        }
+
+        function checkCrosswordWin() {
+            const totalCells = crosswordData.cells.length;
+            const revealedCells = document.querySelectorAll('#crosswordGrid .revealed').length;
+
+            if (revealedCells === totalCells) {
+                clearInterval(crosswordTimer);
+                const secretWord = secretChars.join('');
+
+                if (crosswordTimeElapsed <= 120) {
+                    showMessage(
+                        "فوق‌العاده و بی‌نظیر! ⚡", 
+                        `شما جدول را در زمان ${crosswordTimeElapsed} ثانیه (زیر ۲ دقیقه) کامل کردید!\n🔑 رمز کشف شده: «${secretWord}»\nامتیاز نهایی: ${score}`, 
+                        () => showMenu()
+                    );
+                } else {
+                    showMessage(
+                        "آفرین! جدول و رمز کشف شد 📝", 
+                        `شما جدول را در زمان ${crosswordTimeElapsed} ثانیه با موفقیت تمام کردید.\n🔑 رمز کشف شده: «${secretWord}»\nامتیاز نهایی: ${score}`, 
+                        () => showMenu()
+                    );
+                }
+            }
+        }
+
+        function updateScore() {
+            scoreDisplay.innerText = `امتیاز: ${score}`;
+        }
+
+        function showMessage(title, text, onClose) {
+            const msg = document.createElement('div');
+            msg.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 cyber-card p-8 rounded-3xl text-center z-50 border-2 border-yellow-400 max-w-sm w-full';
+            msg.innerHTML = `
+                <h2 class="text-2xl font-bold mb-4 text-yellow-400">${title}</h2>
+                <p class="mb-6 text-slate-200 whitespace-pre-line">${text}</p>
+                <button id="closeMsgBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl transition-colors font-bold">ادامه</button>
+            `;
+            document.body.appendChild(msg);
+
+            document.getElementById('closeMsgBtn').onclick = () => {
+                msg.remove();
+                if (onClose) onClose();
+            };
+        }
+
+        window.onload = () => {
+            console.log("Game initialized!");
+        };
+    </script>
+</body>
+</html>
